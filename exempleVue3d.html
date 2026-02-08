@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Généalogie 3D - Lignes de Vie</title>
+    <style>
+        body { margin: 0; background: #050505; color: white; overflow: hidden; font-family: sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; pointer-events: none; }
+        #tooltip { 
+            position: absolute; background: rgba(0,0,0,0.8); padding: 10px; 
+            border: 1px solid #4a90e2; border-radius: 4px; display: none; 
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2>Visualisation 3D</h2>
+        <p>Utilisez la souris pour tourner et zoomer</p>
+    </div>
+    <div id="tooltip"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // 1. Données avec une dimension "Z" (branche)
+        const data = [
+            { name: "Louis XIV", birth: 1638, death: 1715, z: 0, color: 0x4a90e2 },
+            { name: "Louis XV", birth: 1710, death: 1774, z: 0, color: 0x4a90e2 },
+            { name: "Marie-Thérèse", birth: 1638, death: 1683, z: 20, color: 0xe24a90 },
+            { name: "Philippe d'Orléans", birth: 1640, death: 1701, z: -20, color: 0x4ae290 },
+            { name: "Ancêtre 1", birth: 1600, death: 1650, z: 0, color: 0xffffff }
+        ];
+
+        // 2. Initialisation Scène
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        
+        // Lumières
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 2).normalize();
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        // 3. Création des Objets (Barres 3D)
+        const scaleX = 2; // 1 an = 2 unités Three.js
+        const startYear = 1600;
+
+        data.forEach((p, index) => {
+            const length = (p.death - p.birth) * scaleX;
+            const geometry = new THREE.BoxGeometry(length, 4, 4);
+            const material = new THREE.MeshPhongMaterial({ color: p.color });
+            const cube = new THREE.Mesh(geometry, material);
+
+            // Positionnement
+            // X: Centre du cube = (Début + Longueur/2)
+            const posX = (p.birth - startYear) * scaleX + (length / 2);
+            cube.position.set(posX, index * 6, p.z);
+            
+            cube.userData = p; // Stockage des infos pour le raycaster
+            scene.add(cube);
+        });
+
+        // Grille de sol pour la perspective
+        const grid = new THREE.GridHelper(1000, 50, 0x444444, 0x222222);
+        grid.position.y = -10;
+        scene.add(grid);
+
+        camera.position.set(100, 50, 150);
+        controls.update();
+
+        // 4. Raycaster pour le survol (Tooltip)
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children);
+
+            if (intersects.length > 0 && intersects[0].object.userData.name) {
+                const d = intersects[0].object.userData;
+                tooltip.style.display = 'block';
+                tooltip.style.left = event.clientX + 10 + 'px';
+                tooltip.style.top = event.clientY + 10 + 'px';
+                tooltip.innerHTML = `<strong>${d.name}</strong><br>${d.birth} - ${d.death}`;
+            } else {
+                tooltip.style.display = 'none';
+            }
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
