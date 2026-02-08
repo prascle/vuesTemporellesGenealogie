@@ -29,50 +29,74 @@
     <div id="tooltip"></div>
 
 <script>
-    const data = [
-        { name: "Louis XIV", birth: 1638, death: 1715, info: "Le Roi Soleil" },
-        { name: "Louis le Grand Dauphin", birth: 1661, death: 1711, info: "Fils de Louis XIV" },
-        { name: "Louis de France", birth: 1682, death: 1712, info: "Petit-fils de Louis XIV" },
-        { name: "Louis XV", birth: 1710, death: 1774, info: "Arrière-petit-fils de Louis XIV" },
-        { name: "Marie-Thérèse d'Autriche", birth: 1638, death: 1683, info: "Épouse de Louis XIV" },
-        { name: "Philippe d'Orléans", birth: 1640, death: 1701, info: "Frère du Roi" },
-        { name: "Ancêtre lointain", birth: 1610, death: 1660, info: "Génération précédente" }
-    ];
+// 1. Données enrichies
+const data = [
+    { id: "ID001", sex: "M" , name: "Louis XIV", birth: 1638, death: 1715, parents: ["ID007"], info: "Le Roi Soleil" },
+    { id: "ID002", sex: "M" , name: "Louis le Grand Dauphin", birth: 1661, death: 1711, parents: ["ID001", "ID005"], info: "Fils de Louis XIV" },
+    { id: "ID003", sex: "M" , name: "Louis de France", birth: 1682, death: 1712, parents: ["ID002"], info: "Petit-fils de Louis XIV" },
+    { id: "ID004", sex: "M" , name: "Louis XV", birth: 1710, death: 1774, parents: ["ID003"], info: "Arrière-petit-fils de Louis XIV" },
+    { id: "ID005", sex: "F" , name: "Marie-Thérèse d'Autriche", birth: 1638, death: 1683, info: "Épouse de Louis XIV" },
+    { id: "ID006", sex: "M" , name: "Philippe d'Orléans", birth: 1640, death: 1701, parents: ["ID007"], info: "Frère du Roi" },
+    { id: "ID007", sex: "M" , name: "Ancêtre lointain", birth: 1610, death: 1660, info: "Génération précédente" }
+];
 
-    const margin = {top: 40, right: 50, bottom: 60, left: 20};
-    const width = 900 - margin.left - margin.right;
-    const barHeight = 25;
-    const barPadding = 8;
+// 2. Fonction de couleur
+const getGenderColor = (sex) => sex === "M" ? "#4a90e2" : sex === "F" ? "#e24a90" : "#999";
 
-    // Algorithme de placement (Tracks)
-    data.sort((a, b) => a.birth - b.birth);
-    let tracks = [];
-    data.forEach(p => {
-        let trackIndex = tracks.findIndex(tEnd => tEnd < p.birth);
-        if (trackIndex === -1) {
-            trackIndex = tracks.length;
-            tracks.push(p.death);
-        } else {
-            tracks[trackIndex] = p.death;
-        }
-        p.track = trackIndex;
-    });
+const margin = {top: 40, right: 50, bottom: 60, left: 20};
+const width = 900 - margin.left - margin.right;
+const barHeight = 25;
+const barPadding = 8;
 
-    const height = (tracks.length * (barHeight + barPadding)) + margin.top + margin.bottom;
 
-    const svg = d3.select("#canvas").append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+// Algorithme de placement (Tracks)
+data.sort((a, b) => a.birth - b.birth);
+let tracks = [];
+data.forEach(p => {
+    let trackIndex = tracks.findIndex(tEnd => tEnd < p.birth);
+    if (trackIndex === -1) {
+        trackIndex = tracks.length;
+        tracks.push(p.death);
+    } else {
+        tracks[trackIndex] = p.death;
+    }
+    p.track = trackIndex;
+});
+    
+const height = (tracks.length * (barHeight + barPadding)) + margin.top + margin.bottom;
 
-    const x = d3.scaleLinear()
-        .domain([d3.min(data, d => d.birth) - 10, d3.max(data, d => d.death) + 10])
-        .range([0, width]);
 
-    // Couleurs selon l'année de naissance
-    const colorScale = d3.scaleSequential(d3.interpolateSpectral)
-        .domain([d3.max(data, d => d.birth), d3.min(data, d => d.birth)]);
+const svg = d3.select("#canvas").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+const x = d3.scaleLinear()
+    .domain([d3.min(data, d => d.birth) - 10, d3.max(data, d => d.death) + 10])
+    .range([0, width]);
+
+// 3. Dessiner les liens (à faire AVANT les barres pour qu'ils soient derrière)
+const links = data.filter(d => d.parents);
+svg.selectAll(".link")
+    .data(links)
+    .enter().append("path")
+    .attr("d", d => {
+        const child = d;
+        const parent = data.find(p => p.id === d.parents[0]); // Lien vers le premier parent pour l'exemple
+        if (!parent) return "";
+        
+        // Création d'un chemin en "L" (vertical puis horizontal)
+        const xStart = x(parent.death); // Part de la fin de vie du parent
+        const yStart = parent.track * (barHeight + barPadding) + barHeight / 2;
+        const xEnd = x(child.birth);   // Arrive au début de vie de l'enfant
+        const yEnd = child.track * (barHeight + barPadding) + barHeight / 2;
+        
+        return `M${xStart},${yStart} L${xStart + 10},${yStart} L${xStart + 10},${yEnd} L${xEnd},${yEnd}`;
+    })
+    .attr("fill", "none")
+    .attr("stroke", "#555")
+    .attr("stroke-width", 1.5);
 
     // Axe X
     svg.append("g")
@@ -90,7 +114,7 @@
         .attr("y", d => d.track * (barHeight + barPadding))
         .attr("width", d => Math.max(x(d.death) - x(d.birth), 2))
         .attr("height", barHeight)
-        .attr("fill", d => colorScale(d.birth))
+        .attr("fill", d => getGenderColor(d.sex))
         .attr("rx", 5)
         .on("mouseover", (event, d) => {
             d3.select("#tooltip")
