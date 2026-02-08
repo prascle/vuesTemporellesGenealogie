@@ -1,0 +1,26 @@
+{
+  "name": "vuestemporellesgenealogie",
+  "version": "1.0.0",
+  "description": "Tests on 2D and 3D views of genealogy, using dates to represent people on a time axis.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/prascle/vuesTemporellesGenealogie.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/prascle/vuesTemporellesGenealogie/issues"
+  },
+  "homepage": "https://github.com/prascle/vuesTemporellesGenealogie#readme",
+  "dependencies": {
+    "d3": "^7.9.0",
+    "read-gedcom": "^0.3.2",
+    "three": "^0.182.0"
+  }
+}
