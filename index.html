@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Généalogie Temporelle</title>
+    <style>
+        #controls { padding: 20px; background: #eee; }
+        .view-container { width: 100%; height: 600px; display: none; }
+        .active { display: block; }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <input type="file" id="gedcomFile" accept=".ged">
+        <button onclick="switchView('2d')">Vue 2D</button>
+        <button onclick="switchView('3d')">Vue 3D</button>
+    </div>
+
+    <div id="container-2d" class="view-container active"></div>
+    <div id="container-3d" class="view-container"></div>
+
+    <div id="debug-console" style="background: #1e1e1e; color: #00ff00; padding: 15px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; border-top: 2px solid #444;">
+        <div>> En attente d'un fichier GEDCOM...</div>
+    </div>
+
+<script type="importmap">
+{
+  "imports": {
+    "d3": "https://cdn.jsdelivr.net/npm/d3@7.8.5/+esm",
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+    "read-gedcom": "https://cdn.jsdelivr.net/npm/read-gedcom@1.1.0/+esm"
+  }
+}
+</script>
+
+<script type="module" src="src/main.js"></script>
+    <script>
+        function switchView(type) {
+            document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+            document.getElementById(`container-${type}`).classList.add('active');
+        }
+    </script>
+</body>
+</html>
