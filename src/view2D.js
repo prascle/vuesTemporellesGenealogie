@@ -1,3 +1,4 @@
+console.log("view2D.js loaded, ready to render 2D visualization.");
 import * as d3 from 'd3';
 
 export function render2D(data, containerId) {

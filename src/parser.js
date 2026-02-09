@@ -1,3 +1,4 @@
+console.log("Parser module loaded, ready to parse GEDCOM data.");
 import { readGedcom } from 'read-gedcom';
 
 export function parseGedcomToJSON(gedcomString) {

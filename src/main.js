@@ -1,9 +1,9 @@
+console.log("Main script loaded, waiting for file input...");
 import { parseGedcomToJSON } from './parser.js';
 import { render2D } from './view2D.js';
 import { render3D } from './view3D.js';
 
 const fileInput = document.getElementById('gedcomFile');
-
 
 fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
