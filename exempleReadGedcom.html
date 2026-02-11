@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Généalogie Timeline 2D</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; margin: 20px; }
+        #canvas { background: #222; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow-x: auto; }
+        .person-bar { cursor: pointer; stroke: rgba(255,255,255,0.2); stroke-width: 1; }
+        .person-bar:hover { filter: brightness(1.2); stroke: #fff; }
+        .label { font-size: 11px; fill: white; pointer-events: none; font-weight: bold; }
+        .tick text { fill: #888; font-size: 12px; }
+        .domain { stroke: #444; }
+        #tooltip {
+            position: absolute; visibility: hidden;
+            background: rgba(40, 40, 40, 0.95); color: white;
+            border: 1px solid #555; padding: 12px; border-radius: 6px;
+            font-size: 13px; pointer-events: none; z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        h2 { color: #4a90e2; }
+    </style>
+</head>
+<body>
+    <h2>Visualisation Temporelle</h2>
+    <div id="canvas"></div>
+    <div id="tooltip"></div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "@treeviz/gedcom-parser": "https://cdn.jsdelivr.net/npm/@treeviz/gedcom-parser@2.0.3/+esm"
+        }
+    }
+</script>
+
+<script type="module">
+import GedcomTree from '@treeviz/gedcom-parser';
+
+const gedcomContent = `0 HEAD
+1 SOUR MyApp
+0 @I1@ INDI
+1 NAME Victoria  /Hanover/
+1 TITL Queen of England
+1 SEX F
+1 BIRT
+2 DATE 24 MAY 1819
+2 PLAC Kensington,Palace,London,England
+1 DEAT
+2 DATE 22 JAN 1901
+2 PLAC Osborne House,Isle of Wight,England
+1 BURI
+2 PLAC Royal Mausoleum,Frogmore,Berkshire,England
+0 @I2@ INDI
+1 NAME Albert Augustus Charles//
+1 TITL Prince
+1 SEX M
+1 BIRT
+2 DATE 26 AUG 1819
+2 PLAC Schloss Rosenau,Near Coburg,Germany
+1 DEAT
+2 DATE 14 DEC 1861
+2 PLAC Windsor Castle,Berkshire,England
+1 BURI
+2 PLAC Royal Masoleum,Frogmore,Windsor,England
+0 @I3@ INDI
+1 NAME Victoria Adelaide Mary//
+1 TITL Princess Royal
+1 SEX F
+1 BIRT
+2 DATE 21 NOV 1840
+2 PLAC Buckingham,Palace,London,England
+1 CHR
+2 DATE 10 FEB 1841
+2 PLAC Throne Room,Buckingham Palac,England
+1 DEAT
+2 DATE  5 AUG 1901
+2 PLAC Friedrichshof,Near,Kronberg,Taunus
+1 BURI
+2 PLAC Friedenskirche,Potsdam
+0 TRLR`;
+
+const { gedcom } = GedcomTree.parse(gedcomContent);
+const individuals = gedcom.indis();
+
+individuals.forEach(indi => {
+  console.log(indi.toName()); // "John Doe"
+  console.log(indi.getBirthDate()); // "*1850" (year only)
+  //console.log(indi.getBirthDate(true)); // "*1850.05.15." (full date)
+  console.log(indi.getBirthPlace()); // "New York, USA" 
+});</script>
+</body>
+</html>
+

@@ -2,6 +2,7 @@ console.log("Parser module loaded, ready to parse GEDCOM data.");
 import { readGedcom } from 'read-gedcom';
 
 export function parseGedcomToJSON(gedcomString) {
+    console.log("Parsing GEDCOM data...", gedcomString.slice(0, 100) + "...");
     const gedcom = readGedcom(gedcomString);
     const individuals = gedcom.getIndividualRecord();
     
