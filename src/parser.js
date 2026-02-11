@@ -1,9 +1,18 @@
 console.log("Parser module loaded, ready to parse GEDCOM data.");
-import { readGedcom } from 'read-gedcom';
+import GedcomTree from '@treeviz/gedcom-parser';
 
 export function parseGedcomToJSON(gedcomString) {
     console.log("Parsing GEDCOM data...", gedcomString.slice(0, 100) + "...");
-    const gedcom = readGedcom(gedcomString);
+    const { gedcom } = GedcomTree.parse(gedcomString);
+    const individuals = gedcom.indis();
+
+    individuals.forEach(indi => {
+    console.log(indi.toName()); // "John Doe"
+    console.log(indi.getBirthDate()); // "*1850" (year only)
+    //console.log(indi.getBirthDate(true)); // "*1850.05.15." (full date)
+    console.log(indi.getBirthPlace()); // "New York, USA" 
+    });
+/*    const gedcom = readGedcom(gedcomString);
     const individuals = gedcom.getIndividualRecord();
     
     const logs = [];
@@ -39,6 +48,7 @@ export function parseGedcomToJSON(gedcomString) {
     }).filter(p => p.birth !== null);
 
     return { data: processed, logs, stats };
+    */
 }
 
 function extractYear(event) {
