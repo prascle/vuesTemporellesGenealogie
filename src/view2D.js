@@ -1,5 +1,6 @@
 console.log("view2D.js loaded, ready to render 2D visualization.");
 import * as d3 from 'd3';
+//import { all } from 'three/tsl';
 
 export function render2D(data, containerId) {
     // 1. Nettoyage du conteneur (évite les doublons au rechargement)
@@ -13,9 +14,21 @@ export function render2D(data, containerId) {
     const barPadding = 8;
 
     // 3. Calcul des pistes (Y) - On le refait ici pour être sûr du placement
-    data.sort((a, b) => a.birth - b.birth);
+
+    const allIndividus = [ ...data.values() ]; // Convertir la Map en tableau pour le tri et l'itération
+    const individus = [];
+    allIndividus.forEach(indi => {
+        if (indi.birth && indi.death) {
+            individus.push(indi);   
+        }   else {
+            console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 2D car il manque une date de naissance ou de décès.`);
+        }
+    });
+
+    individus.sort((a, b) => a.birth - b.birth);
     let tracks = [];
-    data.forEach(p => {
+    let i=0;
+    individus.forEach(p => {
         let trackIndex = tracks.findIndex(tEnd => tEnd < p.birth);
         if (trackIndex === -1) {
             trackIndex = tracks.length;
@@ -23,7 +36,10 @@ export function render2D(data, containerId) {
         } else {
             tracks[trackIndex] = p.death;
         }
+        tracks.push(p.death);
+        //trackIndex = i++; // For debugging, assign a unique track index even if it overlaps
         p.track = trackIndex;
+        console.log(`Assigning ${p.name} (born ${p.birth}) to track ${trackIndex} (current track end: ${tracks[trackIndex]})`); // Trace pour le debug
     });
 
     const height = (tracks.length * (barHeight + barPadding)) + margin.top + margin.bottom;
@@ -37,7 +53,7 @@ export function render2D(data, containerId) {
 
     // 5. Échelles
     const x = d3.scaleLinear()
-        .domain([d3.min(data, d => d.birth) - 10, d3.max(data, d => d.death) + 10])
+        .domain([d3.min(individus, d => d.birth) - 10, d3.max(individus, d => d.death) + 10])
         .range([0, width]);
 
     // Couleurs par genre
@@ -55,7 +71,7 @@ export function render2D(data, containerId) {
 
     // 7. Dessin des barres
     const bars = svg.selectAll(".person-group")
-        .data(data)
+        .data(individus)
         .enter().append("g")
         .attr("class", "person-group");
 
