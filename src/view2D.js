@@ -85,7 +85,12 @@ export function render2D(data, containerId) {
         .attr("rx", 5)
         .style("cursor", "pointer")
         .on("mouseover", (event, d) => showTooltip(event, d))
-        .on("mouseout", () => hideTooltip());
+        .on("mouseout", () => hideTooltip())
+        .on("mousemove", (event) => {
+            d3.select("#tooltip")
+                .style("top", (event.pageY - 10) + "px")
+                .style("left", (event.pageX + 20) + "px");
+        });
 
     // 8. Ajout des noms
     bars.append("text")

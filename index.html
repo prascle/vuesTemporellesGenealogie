@@ -7,6 +7,21 @@
         #controls { padding: 20px; background: #eee; }
         .view-container { width: 100%; height: 600px; display: none; }
         .active { display: block; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; margin: 20px; }
+        #canvas { background: #222; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); overflow-x: auto; }
+        .person-bar { cursor: pointer; stroke: rgba(255,255,255,0.2); stroke-width: 1; }
+        .person-bar:hover { filter: brightness(1.2); stroke: #fff; }
+        .label { font-size: 11px; fill: white; pointer-events: none; font-weight: bold; }
+        .tick text { fill: #888; font-size: 12px; }
+        .domain { stroke: #444; }
+        #tooltip {
+            position: absolute; visibility: hidden;
+            background: rgba(40, 40, 40, 0.95); color: white;
+            border: 1px solid #555; padding: 12px; border-radius: 6px;
+            font-size: 13px; pointer-events: none; z-index: 100;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+        h2 { color: #4a90e2; }
     </style>
 </head>
 <body>
@@ -17,6 +32,10 @@
     </div>
 
     <div id="container-2d" class="view-container active"></div>
+    <h2>Visualisation Temporelle</h2>
+    <div id="canvas"></div>
+    <div id="tooltip"></div>
+    
     <div id="container-3d" class="view-container"></div>
 
     <div id="debug-console" style="background: #1e1e1e; color: #00ff00; padding: 15px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; border-top: 2px solid #444;">
