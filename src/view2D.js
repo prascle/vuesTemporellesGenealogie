@@ -21,7 +21,22 @@ export function render2D(data, containerId) {
         if (indi.birth && indi.death) {
             individus.push(indi);   
         }   else {
-            console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 2D car il manque une date de naissance ou de décès.`);
+            if (!indi.birth) { 
+                if (!indi.death) {
+                    console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 2D car il manque à la fois la date de naissance et de décès.`);
+                } else {
+                    indi.birth = indi.death - 60; // Estimation arbitraire de 60 ans de vie si seule la date de décès est connue
+                    individus.push(indi);
+                    console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de naissance estimée à ${indi.birth} basée sur la date de décès ${indi.death}.`);
+                }
+            } else if (!indi.death) {
+                indi.death = indi.birth + 110; // Estimation arbitraire de 110 ans de vie max si seule la date de naissance est connue
+                if (indi.death > new Date().getFullYear()) {
+                    indi.death = new Date().getFullYear(); // Ne pas dépasser l'année en cours
+                }  
+                individus.push(indi);
+                console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de décès estimée à ${indi.death} basée sur la date de naissance ${indi.birth}.`);
+            }
         }
     });
 
