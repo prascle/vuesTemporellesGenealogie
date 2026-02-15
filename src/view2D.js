@@ -18,6 +18,7 @@ export function render2D(data, containerId) {
     const allIndividus = [ ...data.values() ]; // Convertir la Map en tableau pour le tri et l'itération
     const individus = [];
     allIndividus.forEach(indi => {
+        indi.notes = ""; // Placeholder pour les notes éventuelles à afficher dans le tooltip
         if (indi.birth && indi.death) {
             individus.push(indi);   
         }   else {
@@ -26,6 +27,7 @@ export function render2D(data, containerId) {
                     console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 2D car il manque à la fois la date de naissance et de décès.`);
                 } else {
                     indi.birth = indi.death - 60; // Estimation arbitraire de 60 ans de vie si seule la date de décès est connue
+                    indi.notes="Date de naissance estimée";
                     individus.push(indi);
                     console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de naissance estimée à ${indi.birth} basée sur la date de décès ${indi.death}.`);
                 }
@@ -33,7 +35,9 @@ export function render2D(data, containerId) {
                 indi.death = indi.birth + 110; // Estimation arbitraire de 110 ans de vie max si seule la date de naissance est connue
                 if (indi.death > new Date().getFullYear()) {
                     indi.death = new Date().getFullYear(); // Ne pas dépasser l'année en cours
-                }  
+                } else {
+                    indi.notes="Date de décès estimée";  
+                }
                 individus.push(indi);
                 console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de décès estimée à ${indi.death} basée sur la date de naissance ${indi.birth}.`);
             }
@@ -121,8 +125,12 @@ export function render2D(data, containerId) {
 // Fonctions utilitaires pour le tooltip (à adapter selon votre HTML)
 function showTooltip(event, d) {
     const tooltip = d3.select("#tooltip");
+                let dateDeath = "";
+            if (d.death < new Date().getFullYear()) {
+                dateDeath = d.death;
+            };
     tooltip.style("visibility", "visible")
-           .html(`<strong>${d.name}</strong><br>${d.birth} — ${d.death}`)
+           .html(`<strong>${d.name}</strong><br>${d.birth} — ${dateDeath} ${d.notes}`)
            .style("top", (event.pageY - 10) + "px")
            .style("left", (event.pageX + 20) + "px");
 }
