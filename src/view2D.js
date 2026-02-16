@@ -14,19 +14,19 @@ export function render2D(data, containerId) {
 
     // 3. Calcul des pistes (Y) - On le refait ici pour être sûr du placement
 
-    const allIndividus = [ ...data.values() ]; // Convertir la Map en tableau pour le tri et l'itération
+    const allIndividus = [...data.values()]; // Convertir la Map en tableau pour le tri et l'itération
     const individus = [];
     allIndividus.forEach(indi => {
         indi.notes = ""; // Placeholder pour les notes éventuelles à afficher dans le tooltip
         if (indi.birth && indi.death) {
-            individus.push(indi);   
-        }   else {
-            if (!indi.birth) { 
+            individus.push(indi);
+        } else {
+            if (!indi.birth) {
                 if (!indi.death) {
                     console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 2D car il manque à la fois la date de naissance et de décès.`);
                 } else {
                     indi.birth = indi.death - 60; // Estimation arbitraire de 60 ans de vie si seule la date de décès est connue
-                    indi.notes="Date de naissance estimée";
+                    indi.notes = "Date de naissance estimée";
                     individus.push(indi);
                     console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de naissance estimée à ${indi.birth} basée sur la date de décès ${indi.death}.`);
                 }
@@ -35,7 +35,7 @@ export function render2D(data, containerId) {
                 if (indi.death > new Date().getFullYear()) {
                     indi.death = new Date().getFullYear(); // Ne pas dépasser l'année en cours
                 } else {
-                    indi.notes="Date de décès estimée";  
+                    indi.notes = "Date de décès estimée";
                 }
                 individus.push(indi);
                 console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) a une date de décès estimée à ${indi.death} basée sur la date de naissance ${indi.birth}.`);
@@ -45,7 +45,7 @@ export function render2D(data, containerId) {
 
     individus.sort((a, b) => a.birth - b.birth);
     let tracks = [];
-    let i=0;
+    let i = 0;
     individus.forEach(p => {
         let trackIndex = tracks.findIndex(tEnd => tEnd < p.birth);
         if (trackIndex === -1) {
@@ -124,14 +124,14 @@ export function render2D(data, containerId) {
 // Fonctions utilitaires pour le tooltip (à adapter selon votre HTML)
 function showTooltip(event, d) {
     const tooltip = d3.select("#tooltip");
-                let dateDeath = "";
-            if (d.death < new Date().getFullYear()) {
-                dateDeath = d.death;
-            };
+    let dateDeath = "";
+    if (d.death < new Date().getFullYear()) {
+        dateDeath = d.death;
+    };
     tooltip.style("visibility", "visible")
-           .html(`<strong>${d.name}</strong><br>${d.birth} — ${dateDeath} --${d.id} ${d.notes}`)
-           .style("top", (event.pageY - 10) + "px")
-           .style("left", (event.pageX + 20) + "px");
+        .html(`<strong>${d.name}</strong><br>${d.birth} — ${dateDeath} --${d.id} ${d.notes}`)
+        .style("top", (event.pageY - 10) + "px")
+        .style("left", (event.pageX + 20) + "px");
 }
 
 function hideTooltip() {

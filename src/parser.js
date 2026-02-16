@@ -9,13 +9,13 @@ import { readGedcom } from 'read-gedcom';
  */
 export function parseGedcomToJSON(gedcomString) {
     // 1. Initialisation du parser
-     const gedcom = readGedcom(gedcomString);
+    const gedcom = readGedcom(gedcomString);
 
     // 2. Récupération de tous les enregistrements d'individus (INDI)
     const nbIndividuals = gedcom.getIndividualRecord().length;
     console.log(`Nombre total d'individus trouvés dans le GEDCOM : ${nbIndividuals}`);
     const individuals = gedcom.getIndividualRecord();
-    
+
     // 3. Transformation en format plus simple pour nos vues
     // On itère sur chaque individu et on extrait les infos clés
     // (ID, nom, sexe, dates de naissance/décès)
@@ -33,14 +33,14 @@ export function parseGedcomToJSON(gedcomString) {
         console.log(`Parsing individual ${id}: raw name "${nameRaw}" -> cleaned name "${cleanName}"`);
         const sex = indi.getSex()[0]?.value.toString() || 'U';
         console.log(`Sexe de ${id} (${cleanName}): ${sex}`);
-        function getYear (dateStr) {
+        function getYear(dateStr) {
             if (!dateStr) return null;
             const match = dateStr.match(/\d{4}/);
             return match ? parseInt(match[0]) : null;
         };
         const birthYear = getYear(indi.getEventBirth().toString());
         const deathYear = getYear(indi.getEventDeath().toString());
-        console.log(`Dates de ${id} (${cleanName}): naissance ${birthYear || 'inconnue'}, décès ${deathYear || 'inconnu'}`);    
+        console.log(`Dates de ${id} (${cleanName}): naissance ${birthYear || 'inconnue'}, décès ${deathYear || 'inconnu'}`);
         indiMap.set(id, { id, name: cleanName, sex, birth: birthYear, death: deathYear });
     }
     return indiMap;

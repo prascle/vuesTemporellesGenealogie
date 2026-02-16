@@ -10,7 +10,7 @@ fileInput.addEventListener('change', async (e) => {
 
     const consoleEl = document.getElementById('debug-console');
     consoleEl.innerHTML = `<div>> Chargement de ${file.name}...</div>`;
-    
+
     // Au lieu de file.text(), on lit le buffer brut
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
