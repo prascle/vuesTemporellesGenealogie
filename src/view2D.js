@@ -1,6 +1,5 @@
 console.log("view2D.js loaded, ready to render 2D visualization.");
 import * as d3 from 'd3';
-//import { all } from 'three/tsl';
 
 export function render2D(data, containerId) {
     // 1. Nettoyage du conteneur (évite les doublons au rechargement)
@@ -130,7 +129,7 @@ function showTooltip(event, d) {
                 dateDeath = d.death;
             };
     tooltip.style("visibility", "visible")
-           .html(`<strong>${d.name}</strong><br>${d.birth} — ${dateDeath} ${d.notes}`)
+           .html(`<strong>${d.name}</strong><br>${d.birth} — ${dateDeath} --${d.id} ${d.notes}`)
            .style("top", (event.pageY - 10) + "px")
            .style("left", (event.pageX + 20) + "px");
 }
