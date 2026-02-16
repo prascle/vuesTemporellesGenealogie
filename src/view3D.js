@@ -1,12 +1,13 @@
 console.log("view3D.js loaded, ready to render 3D visualization.");
 import * as THREE from 'three';
+import * as d3 from 'd3';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, controls, animationId;
 
 export function render3D(data, containerId) {
     const container = document.querySelector(containerId);
-    
+
     // 1. Nettoyage si une instance existe déjà
     if (renderer) {
         cancelAnimationFrame(animationId);
@@ -29,7 +30,7 @@ export function render3D(data, containerId) {
     container.appendChild(renderer.domElement);
 
     controls = new OrbitControls(camera, renderer.domElement);
-    
+
     // Lumières
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -39,10 +40,42 @@ export function render3D(data, containerId) {
 
     // 3. Création des Objets (Barres de vie)
     const scaleX = 2; // 1 an = 2 unités
-    const startYear = d3.min(data, d => d.birth);
+    let startYear = 10000; //d3.min(data, d => d.birth);
+    for (const indi of data.values()) {
+        if (indi.birth) {
+            if (indi.birth < startYear) {
+                startYear = indi.birth;
+            }
+        } else {
+            if (indi.death) {
+                if (indi.death < startYear) {
+                    startYear = indi.death - 100; // Si on n'a que la date de décès, on suppose une naissance 100 ans avant
+                }
+            } else {
+                console.warn(`⚠️ Individu ${indi.name} (ID: ${indi.id}) ignoré pour le rendu 3D car il manque la date de naissance.`);
+            }
+        }
+    }
+    console.log(`Start year: ${startYear}, Scale: ${scaleX} units/year`);
 
     data.forEach((p) => {
+        if (!p.birth && !p.death) {
+            console.warn(`⚠️ Individu ${p.name} (ID: ${p.id}) ignoré pour le rendu 3D car il manque la date de naissance et de décès.`);
+            return;
+        }
+        if (!p.birth) {
+            p.birth = p.death - 60; // Estimation arbitraire de 60 ans de vie si seule la date de décès est connue
+            console.warn(`⚠️ Individu ${p.name} (ID: ${p.id}) a une date de naissance estimée à ${p.birth} basée sur la date de décès ${p.death}.`);
+        } else if (!p.death) {
+            p.death = p.birth + 110; // Estimation arbitraire de 110 ans de vie max si seule la date de naissance est connue
+            if (p.death > new Date().getFullYear()) {
+                p.death = new Date().getFullYear(); // Ne pas dépasser l'année en cours
+            } else {
+                console.warn(`⚠️ Individu ${p.name} (ID: ${p.id}) a une date de décès estimée à ${p.death} basée sur la date de naissance ${p.birth}.`);
+            }
+        }
         const length = (p.death - p.birth) * scaleX;
+        console.log(`Creating 3D bar for ${p.name} (ID: ${p.id}): birth ${p.birth}, death ${p.death}, length ${length}`);
         if (length <= 0) return;
 
         const geometry = new THREE.BoxGeometry(length, 4, 4);
@@ -53,8 +86,8 @@ export function render3D(data, containerId) {
         // Positionnement
         // X : Temps, Y : Piste (track), Z : Lignée (pour l'instant 0)
         const posX = (p.birth - startYear) * scaleX + (length / 2);
-        const posY = p.track * 10; 
-        
+        const posY = p.track * 10;
+
         cube.position.set(posX, posY, 0);
         cube.userData = p; // Stockage pour le raycaster
         scene.add(cube);
