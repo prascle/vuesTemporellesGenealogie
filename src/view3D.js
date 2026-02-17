@@ -6,6 +6,9 @@ import * as d3 from 'd3';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, controls, animationId;
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let hoveredObject = null;
 
 function createLabelSprite(text, color = 'white', fontSize = 32) {
     const canvas = document.createElement('canvas');
@@ -134,13 +137,6 @@ export function render3D(data, containerId) {
             }
         }
     }
-    // // On utilise d3.min qui gère les tableaux de toute taille et ignore les null/undefined
-    // const startYear = d3.min(data, p => {
-    //     if (p.birth) return p.birth;
-    //     if (p.death) return p.death - 100;
-    //     return 1827; // Valeur de secours si aucune date n'est disponible (1827 = 2024 - 197 ans, pour couvrir une génération très longue)
-    // }) || 1700; // Valeur de secours si le fichier est vide ou sans dates
-    // console.log(`Calculated start year for timeline: ${startYear}`);
 
     // 3. Création des Objets
     const scaleX = 2;
@@ -211,21 +207,55 @@ export function render3D(data, containerId) {
 
         // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
         // [On peut appeler ici une fonction createLabel(p.name)]
-        // const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
-        // label.position.set(posX, posY, 10); // devant la barre
-        // scene.add(label);
-
-        // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
-        function animate() {
-            animationId = requestAnimationFrame(animate);
-            controls.update(); // Important pour le damping
-            renderer.render(scene, camera); // C'EST CETTE LIGNE QUI DESSINE
-        }
-        animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
+        const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
+        label.position.set(posX, posY, 10); // devant la barre
+        label.visible = false; // On peut gérer la visibilité du label lors du hover avec un raycaster
+        scene.add(label);
+        // On crée un lien bidirectionnel pour le Raycaster
+        cube.userData.label = label ;
     });
 
     // ... (Grille et Animation identiques) ...
 
+
+    // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
+    function animate() {
+        animationId = requestAnimationFrame(animate);
+        
+        // Mise à jour du Raycaster avec la position de la souris
+        raycaster.setFromCamera(mouse, camera);
+        
+        // On cherche les intersections avec les enfants de la scène (les cubes)
+        const intersects = raycaster.intersectObjects(scene.children);
+
+        // On réinitialise l'objet précédemment survolé
+        if (hoveredObject) {
+            hoveredObject.userData.label.visible = false;
+            hoveredObject = null;
+        }
+
+        if (intersects.length > 0) {
+            // On prend le premier objet touché (le plus proche)
+            const object = intersects[0].object;
+            
+            // On vérifie que c'est bien un de nos cubes d'individus
+            if (object.userData && object.userData.label) {
+                hoveredObject = object;
+                hoveredObject.userData.label.visible = true; // On affiche le sprite !
+            }
+        }
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
+
+    window.addEventListener('mousemove', (event) => {
+        // Calcul de la position de la souris en coordonnées normalisées (-1 à +1)
+        const rect = container.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    });
 
     // 5. Gestion robuste du redimensionnement
     function onResize() {
@@ -239,7 +269,6 @@ export function render3D(data, containerId) {
     }
 
     window.addEventListener('resize', onResize);
-
     // TRÈS IMPORTANT : On force un resize immédiat au cas où le container 
     // vient juste d'être affiché par switchView
     setTimeout(onResize, 10);
