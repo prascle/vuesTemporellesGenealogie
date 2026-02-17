@@ -11,6 +11,10 @@ let mouse = new THREE.Vector2();
 let hoveredObject = null;
 let eventRaw; // Variable globale au module
 
+let cameraTargetPos = null;
+let controlsTargetPos = null;
+const lerpFactor = 0.05; // Vitesse du mouvement (0.01 à 0.1)
+
 const tooltip = document.getElementById('tooltip');
 
 
@@ -49,11 +53,11 @@ function createLabelSprite(text, color = 'white', fontSize = 32) {
 function createNameTexture(name, color, width, height) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     // On définit une résolution interne assez haute pour que ce soit net
-    canvas.width = width; 
+    canvas.width = width;
     canvas.height = height;
-    
+
     // 1. Fond : On remplit tout le canvas avec la couleur de l'individu
     // On convertit la couleur hexadécimale Three.js en string CSS (ex: #4a90e2)
     const cssColor = `#${new THREE.Color(color).getHexString()}`;
@@ -61,16 +65,16 @@ function createNameTexture(name, color, width, height) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. Texte : On dessine le nom en blanc par-dessus
-    ctx.fillStyle = 'black'; 
+    ctx.fillStyle = 'black';
     ctx.font = 'bold 50px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    
+
     // Optionnel : un petit contour noir pour la lisibilité
     ctx.lineWidth = 4;
     ctx.strokeStyle = 'rgba(0,0,0,0.3)';
     ctx.strokeText(name, canvas.width / 2, canvas.height / 2);
-    
+
     ctx.fillText(name, canvas.width / 2, canvas.height / 2);
 
     const texture = new THREE.CanvasTexture(canvas);
@@ -183,7 +187,7 @@ export function render3D(data, containerId) {
         let texteIncruste = `${p.name} ${p.birth}—${dateDeath}`;
 
         const nameTexture = createNameTexture(texteIncruste, baseColor, length * 10, boxHeight * 10); // La taille du canvas est arbitraire, elle sera redimensionnée par le sprite
-        const textMaterial = new THREE.MeshPhongMaterial({ 
+        const textMaterial = new THREE.MeshPhongMaterial({
             map: nameTexture,
             transparent: false,
             color: 0xffffff // Important : blanc pour ne pas teinter la texture
@@ -201,7 +205,7 @@ export function render3D(data, containerId) {
         ];
 
         const cube = new THREE.Mesh(geometry, materials);
- 
+
         const posX = (p.birth - startYear) * scaleX + (length / 2);
         const posY = (p.track || 0) * 12; // Utilise 0 si track n'est pas encore défini
 
@@ -225,10 +229,25 @@ export function render3D(data, containerId) {
     // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
     function animate() {
         animationId = requestAnimationFrame(animate);
-        
+
+        // --- Logique de Focus (Lerp) ---
+        if (cameraTargetPos && controlsTargetPos) {
+            // On déplace doucement la caméra
+            camera.position.lerp(cameraTargetPos, lerpFactor);
+
+            // On déplace doucement le point de regard des contrôles
+            controls.target.lerp(controlsTargetPos, lerpFactor);
+
+            // Si on est très proche de la cible, on arrête pour libérer les contrôles
+            if (camera.position.distanceTo(cameraTargetPos) < 0.1) {
+                cameraTargetPos = null;
+                controlsTargetPos = null;
+            }
+        }
+
         // Mise à jour du Raycaster avec la position de la souris
         raycaster.setFromCamera(mouse, camera);
-        
+
         // On cherche les intersections avec les enfants de la scène (les cubes)
         const intersects = raycaster.intersectObjects(scene.children);
         //console.log(intersects.length); // Trace pour vérifier que le raycaster détecte les objets
@@ -238,20 +257,20 @@ export function render3D(data, containerId) {
             const object = intersects[0].object;
             if (object.userData && object.userData.name) {
                 const p = object.userData;
-                
+
                 // 1. Remplir le tooltip (comme en 2D)
                 tooltip.innerHTML = `
                     <strong>${p.name}</strong><br>
                     ${p.birth || '?'} - ${p.death || '?'}<br>
                     <em>Sexe: ${p.sex || 'N/A'}</em>
                 `;
-                
+
                 // 2. Positionner le tooltip près de la souris
                 // On ajoute un petit décalage (15px) pour ne pas être pile sous le curseur
                 tooltip.style.visibility = 'visible';
                 tooltip.style.left = (eventRaw.clientX + 15) + 'px';
                 tooltip.style.top = (eventRaw.clientY + 15) + 'px';
-                
+
                 // Feedback visuel optionnel sur l'objet
                 if (hoveredObject !== object) {
                     if (hoveredObject) hoveredObject.material[4].emissive.set(0x000000);
@@ -261,17 +280,17 @@ export function render3D(data, containerId) {
                 }
             }
         } else {
-                // Cacher le tooltip si on ne survol rien
-                tooltip.style.visibility = 'hidden';
-                if (hoveredObject) {
-                    hoveredObject.material[4].emissive.set(0x000000);
-                    hoveredObject = null;
-                }
+            // Cacher le tooltip si on ne survol rien
+            tooltip.style.visibility = 'hidden';
+            if (hoveredObject) {
+                hoveredObject.material[4].emissive.set(0x000000);
+                hoveredObject = null;
             }
+        }
         controls.update();
         renderer.render(scene, camera);
     }
-    
+
     animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
 
     window.addEventListener('mousemove', (event) => {
@@ -325,7 +344,7 @@ export function resetCamera3D() {
     cameraZ *= 1.2; // A ajuster pour se rapprocher ou s'éloigner selon la densité de l'arbre
 
     camera.position.set(center.x, center.y, cameraZ);
-    
+
     // La caméra regarde le centre géométrique de l'arbre
     controls.target.copy(center);
     controls.update();
@@ -345,6 +364,27 @@ export function resetCamera3D() {
 
 //     // 3. Mettre à jour
 //     controls.update();
-    
+
 //     console.log("Caméra 3D réinitialisée");
 // }
+
+window.addEventListener('click', () => {
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children);
+
+    if (intersects.length > 0) {
+        const object = intersects[0].object;
+        if (object.userData && object.userData.name) {
+
+            // 1. Calculer la nouvelle cible des contrôles (le centre de l'objet)
+            controlsTargetPos = new THREE.Vector3();
+            object.getWorldPosition(controlsTargetPos);
+
+            // 2. Calculer la position idéale de la caméra 
+            // On se place en face de l'objet, avec un léger recul sur l'axe Z
+            cameraTargetPos = controlsTargetPos.clone().add(new THREE.Vector3(0, 50, 200));
+
+            console.log(`Focus sur : ${object.userData.name}`);
+        }
+    }
+});
