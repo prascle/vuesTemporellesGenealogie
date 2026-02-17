@@ -22,7 +22,7 @@ function createLabelSprite(text, color = 'white', fontSize = 32) {
 
     canvas.width = textWidth + 20; // Ajouter un peu de padding
     canvas.height = textHeight + 10;
-    
+
     // Redessiner le texte après avoir redimensionné le canvas
     context.font = `${fontSize}px Arial`;
     context.fillStyle = color;
@@ -35,7 +35,7 @@ function createLabelSprite(text, color = 'white', fontSize = 32) {
     const sprite = new THREE.Sprite(material);
 
     // Ajuster la taille du sprite dans la scène 3D. C'est une valeur à ajuster selon votre échelle.
-    sprite.scale.set(canvas.width * 0.2, canvas.height * 0.2, 1); 
+    sprite.scale.set(canvas.width * 0.1, canvas.height * 0.1, 1);
     return sprite;
 }
 
@@ -152,7 +152,7 @@ export function render3D(data, containerId) {
             dateDeath = p.death;
         };
         const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
-        label.position.set(posX, posY + 10, 0); // Au-dessus de la barre
+        label.position.set(posX, posY, 10); // devant la barre
         scene.add(label);
 
         // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
