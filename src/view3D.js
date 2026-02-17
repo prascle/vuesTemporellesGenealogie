@@ -1,4 +1,6 @@
 console.log("view3D.js loaded, ready to render 3D visualization.");
+
+// ... vos imports ...
 import * as THREE from 'three';
 import * as d3 from 'd3';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -6,41 +8,51 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 let scene, camera, renderer, controls, animationId;
 
 export function render3D(data, containerId) {
+    console.log("Rendering 3D view with data:", data);
     const container = document.querySelector(containerId);
+    if (!container) return;
+    console.log(`Container dimensions: ${container.clientWidth}x${container.clientHeight}`);
 
-    // 1. Nettoyage si une instance existe déjà
+    // 1. Nettoyage (Assurez-vous que l'ancien canvas est bien supprimé)
     if (renderer) {
         cancelAnimationFrame(animationId);
         renderer.dispose();
-        container.removeChild(renderer.domElement);
+        if (container.contains(renderer.domElement)) {
+            container.removeChild(renderer.domElement);
+        }
     }
+    console.log("Previous renderer cleaned up, initializing new 3D scene...");
+    // 2. Dimensions dynamiques
+    // Si le container est masqué, on utilise window par défaut pour ne pas avoir 0
+    let width = container.clientWidth || window.innerWidth;
+    let height = container.clientHeight || 600;
+    console.log(`Using dimensions for 3D rendering: ${width}x${height}`);
 
-    // 2. Initialisation de la Scène
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 2000);
-    camera.position.set(200, 100, 300);
+    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 5000);
+    camera.position.set(200, 200, 500); // Reculé un peu pour mieux voir l'ensemble
+    console.log("Camera initialized at position:", camera.position);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio); // Pour la netteté sur écrans Retina/4K
     container.appendChild(renderer.domElement);
+    console.log("Renderer initialized and appended to container.");
 
     controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Rendu plus fluide lors de la rotation
 
-    // Lumières
+    // ... (Lumières identiques) ...
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(100, 200, 100);
     scene.add(dirLight);
+    console.log("Lights added to the scene.");
 
-    // 3. Création des Objets (Barres de vie)
-    const scaleX = 2; // 1 an = 2 unités
-    let startYear = 10000; //d3.min(data, d => d.birth);
+    let startYear = 2000;
     for (const indi of data.values()) {
         if (indi.birth) {
             if (indi.birth < startYear) {
@@ -56,9 +68,19 @@ export function render3D(data, containerId) {
             }
         }
     }
-    console.log(`Start year: ${startYear}, Scale: ${scaleX} units/year`);
+    // // On utilise d3.min qui gère les tableaux de toute taille et ignore les null/undefined
+    // const startYear = d3.min(data, p => {
+    //     if (p.birth) return p.birth;
+    //     if (p.death) return p.death - 100;
+    //     return 1827; // Valeur de secours si aucune date n'est disponible (1827 = 2024 - 197 ans, pour couvrir une génération très longue)
+    // }) || 1700; // Valeur de secours si le fichier est vide ou sans dates
+    // console.log(`Calculated start year for timeline: ${startYear}`);
 
+    // 3. Création des Objets
+    const scaleX = 2;
+    console.log(`Start year: ${startYear}, Scale: ${scaleX} units/year`);
     data.forEach((p) => {
+        // ... (votre logique d'estimation de date est correcte) ...
         if (!p.birth && !p.death) {
             console.warn(`⚠️ Individu ${p.name} (ID: ${p.id}) ignoré pour le rendu 3D car il manque la date de naissance et de décès.`);
             return;
@@ -74,8 +96,9 @@ export function render3D(data, containerId) {
                 console.warn(`⚠️ Individu ${p.name} (ID: ${p.id}) a une date de décès estimée à ${p.death} basée sur la date de naissance ${p.birth}.`);
             }
         }
+        console.log(`Creating 3D object for ${p.name} (ID: ${p.id}) - Birth: ${p.birth}, Death: ${p.death}`);
+
         const length = (p.death - p.birth) * scaleX;
-        console.log(`Creating 3D bar for ${p.name} (ID: ${p.id}): birth ${p.birth}, death ${p.death}, length ${length}`);
         if (length <= 0) return;
 
         const geometry = new THREE.BoxGeometry(length, 4, 4);
@@ -83,38 +106,42 @@ export function render3D(data, containerId) {
         const material = new THREE.MeshPhongMaterial({ color: color });
         const cube = new THREE.Mesh(geometry, material);
 
-        // Positionnement
-        // X : Temps, Y : Piste (track), Z : Lignée (pour l'instant 0)
         const posX = (p.birth - startYear) * scaleX + (length / 2);
-        const posY = p.track * 10;
+        const posY = (p.track || 0) * 12; // Utilise 0 si track n'est pas encore défini
 
         cube.position.set(posX, posY, 0);
-        cube.userData = p; // Stockage pour le raycaster
+        cube.userData = p;
         scene.add(cube);
 
         // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
         // [On peut appeler ici une fonction createLabel(p.name)]
+
+        // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            controls.update(); // Important pour le damping
+            renderer.render(scene, camera); // C'EST CETTE LIGNE QUI DESSINE
+        }
+        animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
     });
 
-    // Grille de référence
-    const grid = new THREE.GridHelper(2000, 100, 0x444444, 0x222222);
-    grid.position.y = -10;
-    scene.add(grid);
+    // ... (Grille et Animation identiques) ...
 
-    // 4. Boucle d'animation
-    function animate() {
-        animationId = requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
 
-    // Gestion du redimensionnement
-    window.addEventListener('resize', () => {
-        const newWidth = container.clientWidth;
-        const newHeight = container.clientHeight;
-        camera.aspect = newWidth / newHeight;
+    // 5. Gestion robuste du redimensionnement
+    function onResize() {
+        const w = container.clientWidth;
+        const h = container.clientHeight;
+        if (w === 0 || h === 0) return; // Ne rien faire si le container est caché
+
+        camera.aspect = w / h;
         camera.updateProjectionMatrix();
-        renderer.setSize(newWidth, newHeight);
-    });
+        renderer.setSize(w, h);
+    }
+
+    window.addEventListener('resize', onResize);
+
+    // TRÈS IMPORTANT : On force un resize immédiat au cas où le container 
+    // vient juste d'être affiché par switchView
+    setTimeout(onResize, 10);
 }

@@ -84,42 +84,42 @@
 <body>
     <div id="controls">
         <input type="file" id="gedcomFile" accept=".ged">
-        <button onclick="switchView('2d')">Vue 2D</button>
-        <button onclick="switchView('3d')">Vue 3D</button>
+        <button id="btn-2d">Vue 2D</button>
+        <button id="btn-3d">Vue 3D</button>
     </div>
 
-    <div id="container-2d" class="view-container active"></div>
-    <h2>Visualisation Temporelle</h2>
-    <div id="canvas"></div>
+    <div id="container-2d" class="view-container active">
+        <h2>Visualisation 2D</h2>
+        <div id="canvas"></div>
+    </div>
+
+    <div id="container-3d" class="view-container">
+        <h2>Visualisation 3D</h2>
+    </div>
+
     <div id="tooltip"></div>
 
-    <div id="container-3d" class="view-container"></div>
+    <div id="debug-console">...</div>
 
     <div id="debug-console"
         style="background: #1e1e1e; color: #00ff00; padding: 15px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; border-top: 2px solid #444;">
         <div>> En attente d'un fichier GEDCOM...</div>
     </div>
 
-    <script type="importmap">
-{
-  "imports": {
-    "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm",
-    "three": "https://cdn.jsdelivr.net/npm/three@0.182.0/+esm",
-    "@treeviz/gedcom-parser": "https://cdn.jsdelivr.net/npm/@treeviz/gedcom-parser@2.0.3/+esm",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/",
-    "read-gedcom": "https://cdn.jsdelivr.net/npm/read-gedcom@0.3.2/+esm"
-   }
- }
-</script>
-    <!--   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/", -->
-
     <script type="module" src="src/main.js"></script>
-    <script>
-        function switchView(type) {
-            document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
-            document.getElementById(`container-${type}`).classList.add('active');
-        }
+
+    <script type="importmap">
+    {
+    "imports": {
+        "d3": "https://cdn.jsdelivr.net/npm/d3@7.9.0/+esm",
+        "three": "https://cdn.jsdelivr.net/npm/three@0.182.0/+esm",
+        "@treeviz/gedcom-parser": "https://cdn.jsdelivr.net/npm/@treeviz/gedcom-parser@2.0.3/+esm",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.182.0/examples/jsm/",
+        "read-gedcom": "https://cdn.jsdelivr.net/npm/read-gedcom@0.3.2/+esm"
+    }
+    }
     </script>
+
 </body>
 
 </html>
