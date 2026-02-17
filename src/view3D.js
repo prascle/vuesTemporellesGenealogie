@@ -7,6 +7,38 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let scene, camera, renderer, controls, animationId;
 
+function createLabelSprite(text, color = 'white', fontSize = 32) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    context.font = `${fontSize}px Arial`;
+    context.fillStyle = color;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    // Mesurer le texte pour dimensionner le canvas
+    const metrics = context.measureText(text);
+    const textWidth = metrics.width;
+    const textHeight = fontSize * 1.5; // Ajustement pour la hauteur réelle du texte avec padding
+
+    canvas.width = textWidth + 20; // Ajouter un peu de padding
+    canvas.height = textHeight + 10;
+    
+    // Redessiner le texte après avoir redimensionné le canvas
+    context.font = `${fontSize}px Arial`;
+    context.fillStyle = color;
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(material);
+
+    // Ajuster la taille du sprite dans la scène 3D. C'est une valeur à ajuster selon votre échelle.
+    sprite.scale.set(canvas.width * 0.2, canvas.height * 0.2, 1); 
+    return sprite;
+}
+
 export function render3D(data, containerId) {
     console.log("Rendering 3D view with data:", data);
     const container = document.querySelector(containerId);
@@ -115,6 +147,13 @@ export function render3D(data, containerId) {
 
         // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
         // [On peut appeler ici une fonction createLabel(p.name)]
+        let dateDeath = "";
+        if (p.death < new Date().getFullYear()) {
+            dateDeath = p.death;
+        };
+        const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
+        label.position.set(posX, posY + 10, 0); // Au-dessus de la barre
+        scene.add(label);
 
         // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
         function animate() {
