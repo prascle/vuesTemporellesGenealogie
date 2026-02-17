@@ -39,6 +39,40 @@ function createLabelSprite(text, color = 'white', fontSize = 32) {
     return sprite;
 }
 
+function createNameTexture(name, color, width, height) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // On définit une résolution interne assez haute pour que ce soit net
+    canvas.width = width; 
+    canvas.height = height;
+    
+    // 1. Fond : On remplit tout le canvas avec la couleur de l'individu
+    // On convertit la couleur hexadécimale Three.js en string CSS (ex: #4a90e2)
+    const cssColor = `#${new THREE.Color(color).getHexString()}`;
+    ctx.fillStyle = cssColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Texte : On dessine le nom en blanc par-dessus
+    ctx.fillStyle = 'white'; 
+    ctx.font = 'bold 50px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Optionnel : un petit contour noir pour la lisibilité
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+    ctx.strokeText(name, canvas.width / 2, canvas.height / 2);
+    
+    ctx.fillText(name, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    // On améliore la netteté de la texture
+    texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+    return texture;
+}
+
 export function render3D(data, containerId) {
     console.log("Rendering 3D view with data:", data);
     const container = document.querySelector(containerId);
@@ -132,12 +166,42 @@ export function render3D(data, containerId) {
 
         const length = (p.death - p.birth) * scaleX;
         if (length <= 0) return;
+        const boxHeight = 4;
+        const boxDepth = 4;
 
-        const geometry = new THREE.BoxGeometry(length, 4, 4);
-        const color = p.sex === 'M' ? 0x4a90e2 : (p.sex === 'F' ? 0xe24a90 : 0x999999);
-        const material = new THREE.MeshPhongMaterial({ color: color });
-        const cube = new THREE.Mesh(geometry, material);
+        const geometry = new THREE.BoxGeometry(length, boxHeight, boxDepth);
 
+        // Matériau de base (pour les côtés, le haut, le bas et l'arrière)
+        const baseColor = p.sex === 'M' ? 0x4a90e2 : (p.sex === 'F' ? 0xe24a90 : 0x999999);
+        const baseMaterial = new THREE.MeshPhongMaterial({ color: baseColor });
+
+        // Matériau pour la face avant avec le texte
+        let dateDeath = "";
+        if (p.death < new Date().getFullYear()) {
+            dateDeath = p.death;
+        };
+        let texteIncruste = `${p.name} ${p.birth}—${dateDeath}`;
+
+        const nameTexture = createNameTexture(texteIncruste, baseColor, length * 10, boxHeight * 10); // La taille du canvas est arbitraire, elle sera redimensionnée par le sprite
+        const textMaterial = new THREE.MeshPhongMaterial({ 
+            map: nameTexture,
+            transparent: false,
+            color: 0xffffff // Important : blanc pour ne pas teinter la texture
+        });
+
+        // L'ordre des faces dans BoxGeometry est : 
+        // [0] Droite, [1] Gauche, [2] Haut, [3] Bas, [4] Avant (Z+), [5] Arrière (Z-)
+        const materials = [
+            baseMaterial, // Droite
+            baseMaterial, // Gauche
+            baseMaterial, // Haut
+            baseMaterial, // Bas
+            textMaterial, // Avant (Celle qu'on verra par défaut)
+            baseMaterial  // Arrière
+        ];
+
+        const cube = new THREE.Mesh(geometry, materials);
+ 
         const posX = (p.birth - startYear) * scaleX + (length / 2);
         const posY = (p.track || 0) * 12; // Utilise 0 si track n'est pas encore défini
 
@@ -147,13 +211,9 @@ export function render3D(data, containerId) {
 
         // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
         // [On peut appeler ici une fonction createLabel(p.name)]
-        let dateDeath = "";
-        if (p.death < new Date().getFullYear()) {
-            dateDeath = p.death;
-        };
-        const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
-        label.position.set(posX, posY, 10); // devant la barre
-        scene.add(label);
+        // const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
+        // label.position.set(posX, posY, 10); // devant la barre
+        // scene.add(label);
 
         // --- 4. Boucle d'animation (À vérifier à la fin de render3D) ---
         function animate() {
