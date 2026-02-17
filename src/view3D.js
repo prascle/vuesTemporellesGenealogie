@@ -9,6 +9,10 @@ let scene, camera, renderer, controls, animationId;
 let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let hoveredObject = null;
+let eventRaw; // Variable globale au module
+
+const tooltip = document.getElementById('tooltip');
+
 
 function createLabelSprite(text, color = 'white', fontSize = 32) {
     const canvas = document.createElement('canvas');
@@ -205,14 +209,14 @@ export function render3D(data, containerId) {
         cube.userData = p;
         scene.add(cube);
 
-        // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
-        // [On peut appeler ici une fonction createLabel(p.name)]
-        const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
-        label.position.set(posX, posY, 10); // devant la barre
-        label.visible = false; // On peut gérer la visibilité du label lors du hover avec un raycaster
-        scene.add(label);
-        // On crée un lien bidirectionnel pour le Raycaster
-        cube.userData.label = label ;
+        // // Optionnel : Ajout d'une étiquette texte simple (via Sprite ou Canvas)
+        // // [On peut appeler ici une fonction createLabel(p.name)]
+        // const label = createLabelSprite(`${p.name} ${p.birth}—${dateDeath}`);
+        // label.position.set(posX, posY, 10); // devant la barre
+        // label.visible = false; // On peut gérer la visibilité du label lors du hover avec un raycaster
+        // scene.add(label);
+        // // On crée un lien bidirectionnel pour le Raycaster
+        // cube.userData.label = label ;
     });
 
     // ... (Grille et Animation identiques) ...
@@ -227,35 +231,51 @@ export function render3D(data, containerId) {
         
         // On cherche les intersections avec les enfants de la scène (les cubes)
         const intersects = raycaster.intersectObjects(scene.children);
-        console.log(intersects.length); // Trace pour vérifier que le raycaster détecte les objets
+        //console.log(intersects.length); // Trace pour vérifier que le raycaster détecte les objets
 
         if (intersects.length > 0) {
             // On prend le premier objet touché (le plus proche)
             const object = intersects[0].object;
-            
-            if (hoveredObject && hoveredObject !== object) {
-                hoveredObject.userData.label.visible = false; // Cacher le label de l'objet précédemment survolé
-            }
-            
-            // On vérifie que c'est bien un de nos cubes d'individus
-            if (object.userData && object.userData.label) {
-                hoveredObject = object;
-                hoveredObject.userData.label.visible = true; // On affiche le sprite !
+            if (object.userData && object.userData.name) {
+                const p = object.userData;
+                
+                // 1. Remplir le tooltip (comme en 2D)
+                tooltip.innerHTML = `
+                    <strong>${p.name}</strong><br>
+                    ${p.birth || '?'} - ${p.death || '?'}<br>
+                    <em>Sexe: ${p.sex || 'N/A'}</em>
+                `;
+                
+                // 2. Positionner le tooltip près de la souris
+                // On ajoute un petit décalage (15px) pour ne pas être pile sous le curseur
+                tooltip.style.visibility = 'visible';
+                tooltip.style.left = (eventRaw.clientX + 15) + 'px';
+                tooltip.style.top = (eventRaw.clientY + 15) + 'px';
+                
+                // Feedback visuel optionnel sur l'objet
+                if (hoveredObject !== object) {
+                    if (hoveredObject) hoveredObject.material[4].emissive.set(0x000000);
+                    hoveredObject = object;
+                    // On fait briller la face avant (index 4)
+                    hoveredObject.material[4].emissive.set(0x333333);
+                }
             }
         } else {
-            // Si on n'intersecte rien, on s'assure que le label du cube précédemment survolé est caché
-            if (hoveredObject) {
-                hoveredObject.userData.label.visible = false;
-                hoveredObject = null;
+                // Cacher le tooltip si on ne survol rien
+                tooltip.style.visibility = 'hidden';
+                if (hoveredObject) {
+                    hoveredObject.material[4].emissive.set(0x000000);
+                    hoveredObject = null;
+                }
             }
-        }
-
         controls.update();
         renderer.render(scene, camera);
     }
+    
     animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
 
     window.addEventListener('mousemove', (event) => {
+        eventRaw = event; // On garde une copie de l'event pour le tooltip HTML
         const canvas = renderer.domElement; // Le canvas sur lequel on rend la scène, après le titre dans "container-3d"
         const rect = canvas.getBoundingClientRect();
 

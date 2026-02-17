@@ -70,8 +70,8 @@
             padding: 12px;
             border-radius: 6px;
             font-size: 13px;
-            pointer-events: none;
-            z-index: 100;
+            pointer-events: none; /* Crucial pour ne pas bloquer le raycaster */
+            z-index: 1000;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
         }
 
