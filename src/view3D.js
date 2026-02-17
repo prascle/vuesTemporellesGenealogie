@@ -61,7 +61,7 @@ function createNameTexture(name, color, width, height) {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // 2. Texte : On dessine le nom en blanc par-dessus
-    ctx.fillStyle = 'white'; 
+    ctx.fillStyle = 'black'; 
     ctx.font = 'bold 50px Arial';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -257,7 +257,7 @@ export function render3D(data, containerId) {
                     if (hoveredObject) hoveredObject.material[4].emissive.set(0x000000);
                     hoveredObject = object;
                     // On fait briller la face avant (index 4)
-                    hoveredObject.material[4].emissive.set(0x333333);
+                    hoveredObject.material[4].emissive.set(0x555555);
                 }
             }
         } else {
