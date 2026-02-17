@@ -184,3 +184,46 @@ export function render3D(data, containerId) {
     // vient juste d'être affiché par switchView
     setTimeout(onResize, 10);
 }
+
+export function resetCamera3D() {
+    if (!scene || !camera || !controls) return;
+
+    // Calculer la boîte qui englobe tous les objets de la scène
+    const box = new THREE.Box3().setFromObject(scene);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+
+    // Positionner la caméra en fonction de la taille de l'arbre
+    const maxDim = Math.max(size.x, size.y, size.z);
+    console.log(`Resetting camera. Scene center: ${center.toArray()}, Scene size: ${size.toArray()}`);
+    const fov = camera.fov * (Math.PI / 180);
+    let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+    cameraZ *= 0.4; // A ajuster pour se rapprocher ou s'éloigner selon la densité de l'arbre
+
+    camera.position.set(center.x, center.y, cameraZ);
+    
+    // La caméra regarde le centre géométrique de l'arbre
+    controls.target.copy(center);
+    controls.update();
+}
+
+// export function resetCamera3D() {
+//     if (!camera || !controls) return;
+
+//     // 1. Définir la position "Idéale" 
+//     // On se place au centre (X), un peu en hauteur (Y) 
+//     // et bien en face/au-dessus sur l'axe Z
+//     camera.position.set(200, 200, 800); 
+
+//     // 2. Redonner une cible aux contrôles
+//     // On veut que la caméra regarde vers le milieu de la timeline
+//     controls.target.set(200, 0, 0);
+
+//     // 3. Mettre à jour
+//     controls.update();
+    
+//     console.log("Caméra 3D réinitialisée");
+// }

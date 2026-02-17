@@ -2,11 +2,13 @@ console.log("Main script loaded, waiting for file input...");
 import { parseGedcomToJSON } from './parser.js';
 import { render2D } from './view2D.js';
 import { render3D } from './view3D.js';
+import { resetCamera3D } from './view3D.js';
 
 const fileInput = document.getElementById('gedcomFile');
 
 const btn2d = document.getElementById('btn-2d');
 const btn3d = document.getElementById('btn-3d');
+const btnReset3d = document.getElementById('btn-reset-3d');
 
 function toggleView(type) {
     // 1. Gérer les classes CSS
@@ -26,6 +28,9 @@ function toggleView(type) {
 
 btn2d.addEventListener('click', () => toggleView('2d'));
 btn3d.addEventListener('click', () => toggleView('3d'));
+btnReset3d.addEventListener('click', () => {
+    resetCamera3D();
+});
 
 // Variable pour stocker les données chargées
 let currentData = null;
