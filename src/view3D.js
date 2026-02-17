@@ -227,21 +227,26 @@ export function render3D(data, containerId) {
         
         // On cherche les intersections avec les enfants de la scène (les cubes)
         const intersects = raycaster.intersectObjects(scene.children);
-
-        // On réinitialise l'objet précédemment survolé
-        if (hoveredObject) {
-            hoveredObject.userData.label.visible = false;
-            hoveredObject = null;
-        }
+        console.log(intersects.length); // Trace pour vérifier que le raycaster détecte les objets
 
         if (intersects.length > 0) {
             // On prend le premier objet touché (le plus proche)
             const object = intersects[0].object;
             
+            if (hoveredObject && hoveredObject !== object) {
+                hoveredObject.userData.label.visible = false; // Cacher le label de l'objet précédemment survolé
+            }
+            
             // On vérifie que c'est bien un de nos cubes d'individus
             if (object.userData && object.userData.label) {
                 hoveredObject = object;
                 hoveredObject.userData.label.visible = true; // On affiche le sprite !
+            }
+        } else {
+            // Si on n'intersecte rien, on s'assure que le label du cube précédemment survolé est caché
+            if (hoveredObject) {
+                hoveredObject.userData.label.visible = false;
+                hoveredObject = null;
             }
         }
 
@@ -251,10 +256,17 @@ export function render3D(data, containerId) {
     animate(); // <--- IL FAUT APPELER LA FONCTION ICI 
 
     window.addEventListener('mousemove', (event) => {
-        // Calcul de la position de la souris en coordonnées normalisées (-1 à +1)
-        const rect = container.getBoundingClientRect();
-        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        const canvas = renderer.domElement; // Le canvas sur lequel on rend la scène, après le titre dans "container-3d"
+        const rect = canvas.getBoundingClientRect();
+
+        // 1. Calcul de la position locale à l'intérieur du canvas
+        const localX = event.clientX - rect.left;
+        const localY = event.clientY - rect.top;
+
+        // 2. Conversion en coordonnées normalisées (NDC) pour Three.js : de -1 à +1
+        // Formule : (Position / Taille) * 2 - 1
+        mouse.x = (localX / rect.width) * 2 - 1;
+        mouse.y = -(localY / rect.height) * 2 + 1; // On inverse le Y car en CSS 0 est en haut, en WebGL 0 est au centre
     });
 
     // 5. Gestion robuste du redimensionnement
@@ -290,7 +302,7 @@ export function resetCamera3D() {
     const fov = camera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
 
-    cameraZ *= 0.4; // A ajuster pour se rapprocher ou s'éloigner selon la densité de l'arbre
+    cameraZ *= 1.2; // A ajuster pour se rapprocher ou s'éloigner selon la densité de l'arbre
 
     camera.position.set(center.x, center.y, cameraZ);
     
