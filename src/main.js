@@ -4,6 +4,28 @@ import { render2D } from './view2D.js';
 import { render3D } from './view3D.js';
 import { resetCamera3D } from './view3D.js';
 
+// main.js
+import { ViewManager } from './ViewManager.js';
+import { D3View } from './D3View.js';
+import { ThreeView } from './ThreeView.js';
+
+// Données (exemple)
+const data = { /* tes données GedCom */ };
+
+// Initialisation
+const viewManager = new ViewManager();
+const d3View = new D3View(document.getElementById('d3-container'), data);
+const threeView = new ThreeView(document.getElementById('three-container'), data);
+
+// Enregistrement des vues
+viewManager.registerView(d3View);
+viewManager.registerView(threeView);
+
+// Exemple d'interaction
+viewManager.selectIndividual('I1');
+viewManager.setGenerations(4);
+
+
 const fileInput = document.getElementById('gedcomFile');
 
 const btn2d = document.getElementById('btn-2d');
